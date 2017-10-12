@@ -6,5 +6,4 @@
 
 
 
-![orgTreeGif]
-(https://github.com/rickie1219/DemoForOrgnizationTree/blob/master/ScreenShot/001.gif)
+![orgTreeGif](https://github.com/rickie1219/DemoForOrgnizationTree/blob/master/ScreenShot/001.gif)
