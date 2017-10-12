@@ -28,9 +28,6 @@
     
     /** 层级标记*/
     int flagLevel;
-    
-    /** 测试用的数组*/
-    NSMutableArray      *arrTemp;
 }
 @end
 
@@ -58,10 +55,10 @@
 - (void)initData
 {
     // 创建假数据
-    arrTemp = [NSMutableArray arrayWithCapacity:0];
+    NSMutableArray *arrTemp = [NSMutableArray arrayWithCapacity:0];
     for (int i = 0; i < 20; i++) {
         OrgTreeDepartment *dep11 = [[OrgTreeDepartment alloc] init];
-        dep11.deparmentName = [NSString stringWithFormat:@"第%d层 第%d个元素行数据很长很长很长很长很长很长很长很长很长", flagLevel, i];
+        dep11.deparmentName = [NSString stringWithFormat:@"第%d层 第%d个元素行数据根数据", flagLevel, i];
         [arrTemp addObject:dep11];
     }
     // 这是根目录下的tableView的数据源数组
@@ -74,7 +71,7 @@
     // 2.获取当前的索引
     NSString *index = [NSString stringWithFormat:@"%d", flagLevel];
     // 3.获取子部门数据
-    NSArray *arr = [arrTemp mutableCopy];
+    NSArray *arr = [NSArray arrayWithArray:arrTemp];
     // 4.将上面的三个数据存入字典,存放到顶部菜单数组中
     NSDictionary *dict = @{@"model": dep, @"index": index, @"array" : arr};
     // 5.菜单数组需要存入包含以上三个信息的字典
@@ -146,6 +143,7 @@
 {
     // 点击某个部门的时候, 就获取将该部门的所有子部门,然后刷新表数据,还要刷新分区头
     flagLevel++;
+    NSLog(@"\n\n select no.%d level \n\n", flagLevel);
     
     // 1.先获取点击的组织机构的基本信息
     OrgTreeDepartment *dep = arrDepartments[indexPath.row];
@@ -153,21 +151,22 @@
     NSString *index = [NSString stringWithFormat:@"%d", flagLevel];
     // 3.获取子部门数据
     // 3.1->先移除临时数组中的数据
-    [arrTemp removeAllObjects];
+    NSMutableArray *arr = [NSMutableArray arrayWithCapacity:0];
     // 3.2->再将请求到的子部门的数据添加到临时数组中
     for (int j = 0; j < 20; j++) {
-        OrgTreeDepartment *dep11 = [[OrgTreeDepartment alloc] init];
-        dep11.deparmentName = [NSString stringWithFormat:@"第%d层 第%d个元素行 子部门也是很长很长的", flagLevel, j];
-        [arrTemp addObject:dep11];
+        OrgTreeDepartment *depModel = [[OrgTreeDepartment alloc] init];
+        depModel.deparmentName = [NSString stringWithFormat:@"第%d层 第%d个元素行 子部门", flagLevel, j];
+        [arr addObject:depModel];
     }
-    // 4.将上面的三个数据存入字典,存放到顶部菜单数组中
-    NSDictionary *dict = @{@"model": dep, @"index": index, @"array" : arrTemp};
+    // 4.将上面的三个数据存入字典,存放到顶部菜单数组中  这里字典中的array值如果用的是全局的标量，那么arrHeaderItems数组中的字典元素所有key是"array"的值都会被修改为最新的值。（这个需要注意，字典中尽量不要使用全局变量）
+    NSDictionary *dict = @{@"model": dep, @"index": index, @"array" : arr};
     // 5.菜单数组需要存入包含三个信息的字典
     [arrHeaderItems addObject:dict];
     
     // 这里在点击单元格的时候,根据单元格请求数据
     // 然后根据请求到的数据数组, 将数组赋值给表视图的数据源数组
-    arrDepartments = [arrTemp mutableCopy];
+    [arrDepartments removeAllObjects];
+    arrDepartments = [NSMutableArray arrayWithArray:arr];
     
     [org_tableView reloadData];
 }
@@ -175,34 +174,51 @@
 #pragma mark - OrgnizationHeaderViewDelegate
 - (void)orgnizationHeaderViewDidClickIndex:(NSInteger)index
 {
+    NSLog(@"select flagLevel =  no.%d level", flagLevel);
+    NSLog(@"select index = no.%ld level", index);
     // 点击选项按钮的代理方法的时候
     // 1.根据索引,将_headerMenuArray菜单数组中的索引后面的数据都删除掉
-    NSLog(@"==代理方法==->打印点击了第%ld个菜单选项", index);
+    NSLog(@"\n\n==代理方法==->打印点击了第%ld个菜单选项\n\n", index);
     // 如果点击菜单选项和当前的层级标记相等，不做任何操作，直接返回
     if (flagLevel == (int)index)
     {
         return;
     }
+    
+    
+    // tableView的数据源数组也要进行替换，替换成当前选项菜单下的数据
+    // 先移除数组中的所有元素
+    [arrDepartments removeAllObjects];
+    // 再将选中的菜单选项下的数据赋值给tableView的数据源数组
+    arrDepartments = [NSMutableArray arrayWithArray:[arrHeaderItems[index] objectForKey:@"array"]];
+    
     // 层级标记的索引需要跟点击的菜单选项索引变化
     flagLevel = (int)index;
+    
+
     
     // 用来保存菜单选项数组的临时数组
     NSMutableArray *arrHeaderTemp = [NSMutableArray array];
     // 根据点击的第几个菜单选项索引x，遍历到原来菜单选项数组第x个元素，添加item到临时数组中
+//    int countTime = 0;
+//    for (NSDictionary *dictDep in arrHeaderItems) {
+//        [arrHeaderTemp addObject:dictDep];
+//        if (countTime == index)
+//        {
+//            return;
+//        }
+//        countTime++;
+//    }
+    
     for (int i = 0; i <= index; i++) {
         [arrHeaderTemp addObject:arrHeaderItems[i]];
     }
     // 临时数组添加好了以后，就将原来的选项数组中的所有元素移除
     [arrHeaderItems removeAllObjects];
     // 再将临时数组中的数组赋值给原来的菜单选项数组
-    arrHeaderItems = [arrHeaderTemp mutableCopy];
-    // tableView的数据源数组也要进行替换，替换成当前选项菜单下的数据
-    // 先移除数组中的所有元素
-    [arrDepartments removeAllObjects];
-    // 再将选中的菜单选项下的数据赋值给tableView的数据源数组
-    arrDepartments = [arrHeaderItems[index] objectForKey:@"array"];
+    [arrHeaderItems addObjectsFromArray:arrHeaderTemp];
     
-    
+
     // 2.删除掉多余的数据以后,刷新表视图
     [org_tableView reloadData];
 }

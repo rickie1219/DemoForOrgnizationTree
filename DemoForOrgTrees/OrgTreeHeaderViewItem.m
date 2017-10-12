@@ -87,8 +87,8 @@ static CGFloat fontSize = 14;
     UITouch *touch = [touches anyObject];
     // 触碰的个数/点击菜单的个数
     NSUInteger tapCount = touch.tapCount;
-    NSLog(@"touch method block -> department = %@", _department.deparmentName);
-    NSLog(@"selected No.%d item", _index);
+//    NSLog(@"touch method block -> department = %@", _department.deparmentName);
+//    NSLog(@"selected No.%d item", _index);
     switch (tapCount)
     {
         case 1:
